@@ -7,7 +7,6 @@ const Note = require('../models/note');
 
 const { notes } = require('../db/data');
 
-console.log(MONGODB_URI);
 mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
   .then(() => mongoose.connection.db.dropDatabase())
   .then(() => Note.insertMany(notes))

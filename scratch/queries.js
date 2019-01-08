@@ -5,29 +5,29 @@ const { MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
 
-mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
-  .then(() => {
-    const searchTerm = 'lady gaga';
+// mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+//   .then(() => {
+//     const searchTerm = 'lady gaga';
 
-    const regex = new RegExp(searchTerm, 'i');
+//     const regex = new RegExp(searchTerm, 'i');
     
-    return Note.find({
-      $or: [
-        { title: regex },
-        { content: regex }
-      ]
-    }).sort({ updatedAt: 'desc' });
-  })
-  .then(results => {
-    console.log(JSON.stringify(results));
-  })
-  .then(() => {
-    return mongoose.disconnect();
-  })
-  .catch(err => {
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+//     return Note.find({
+//       $or: [
+//         { title: regex },
+//         { content: regex }
+//       ]
+//     }).sort({ updatedAt: 'desc' });
+//   })
+//   .then(results => {
+//     console.log(JSON.stringify(results));
+//   })
+//   .then(() => {
+//     return mongoose.disconnect();
+//   })
+//   .catch(err => {
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
 
 // mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
 //   .then(() => {

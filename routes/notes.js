@@ -12,7 +12,6 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
 
   const searchTerm = req.query.searchTerm;
-  console.log(searchTerm);
   const regex = new RegExp(searchTerm, 'i');
 
   Note.find({
@@ -29,8 +28,7 @@ router.get('/', (req, res, next) => {
       }
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -38,6 +36,12 @@ router.get('/', (req, res, next) => {
 router.get('/:id', (req, res, next) => {
 
   const noteId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(noteId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Note.findById(noteId)
     .then(results => {
@@ -48,8 +52,7 @@ router.get('/:id', (req, res, next) => {
       }
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -71,11 +74,12 @@ router.post('/', (req, res, next) => {
 
   Note.create(newItem)
     .then(results => {
-      res.json(results);
+      res.location(`${req.originalUrl}/${results.id}`)
+        .status(201)
+        .json(results);
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -103,8 +107,7 @@ router.put('/:id', (req, res, next) => {
       res.json(results);
     })
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
@@ -116,8 +119,7 @@ router.delete('/:id', (req, res, next) => {
   Note.findByIdAndDelete(deleteId)
     .then(res.sendStatus(204))
     .catch(err => {
-      console.error(`ERROR: ${err.message}`);
-      console.error(err);
+      next(err);
     });
 });
 
