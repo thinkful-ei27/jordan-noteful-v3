@@ -64,20 +64,23 @@ describe('Notes API resource', function() {
         .then(function(res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
+          expect(res.body).to.be.an('array');
           expect(res.body).to.have.lengthOf.at.least(1);
 
           res.body.forEach(function(note) {
-            expect(note).to.be.a('object');
-            expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+            expect(note).to.be.an('object');
+            expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
           });
           resNote = res.body[0];
+          console.log((resNote));
           return Note.findById(resNote.id);
         })
         .then(function(note) {
+          console.log(note);
           expect(resNote.id).to.equal(note.id);
           expect(resNote.title).to.equal(note.title);
           expect(resNote.content).to.equal(note.content);
+          expect(resNote.folderId).to.equal(note.folderId.toString());
         });
     });
   });
@@ -97,11 +100,12 @@ describe('Notes API resource', function() {
               expect(res).to.be.json;
           
               expect(res.body).to.be.an('object');
-              expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+              expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
 
               expect(res.body.id).to.equal(data.id);
               expect(res.body.title).to.equal(data.title);
               expect(res.body.content).to.equal(data.content);
+              expect(res.body.folderId).to.equal(data.folderId.toString());
               expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
               expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
 
@@ -155,8 +159,8 @@ describe('Notes API resource', function() {
         .then(function(note) {
           updateNote.id = note.id;
           updateNote.createdAt = note.createdAt;
+          updateNote.updatedAt = note.updatedAt;
 
-        
           return chai.request(app)
             .put(`/api/notes/${note.id}`)
             .send(updateNote);
@@ -167,7 +171,7 @@ describe('Notes API resource', function() {
           expect(res).to.be.json;
 
           expect(res.body).to.be.an('object');
-          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
+          expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
 
           return Note.findById(updateNote.id);
         })
@@ -176,7 +180,7 @@ describe('Notes API resource', function() {
           expect(note.title).to.equal(updateNote.title);
           expect(note.content).to.equal(updateNote.content);
           expect(new Date(note.createdAt)).to.eql(updateNote.createdAt);
-          // expect(new Date(note.updatedAt)).to.eql(updateNote.updatedAt);
+          expect(new Date(note.updatedAt)).to.be.greaterThan(updateNote.updatedAt);
         });
     });
   });

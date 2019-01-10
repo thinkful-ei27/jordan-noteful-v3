@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
 
   Folder.find()
-    .sort({name: 'asc'})
+    .sort('name')
     .then(results => {
       if (results) {
         res.json(results);

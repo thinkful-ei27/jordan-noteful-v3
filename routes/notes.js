@@ -11,15 +11,20 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
 
-  const searchTerm = req.query.searchTerm;
-  const regex = new RegExp(searchTerm, 'i');
+  const { searchTerm, folderId } = req.query;
+  let filter = {};
 
-  Note.find({
-    $or: [
-      { title: regex },
-      { content: regex }
-    ]
-  }).sort({updatedAt: 'desc'})
+  if (searchTerm) {
+    const regex = new RegExp(searchTerm, 'i');
+    filter.$or =[{ 'title': regex}, {'content': regex}];
+  }
+
+  if (folderId) {
+    filter.folderId = folderId;
+  }
+
+  Note.find(filter)
+    .sort({updatedAt: 'desc'})
     .then(results => {
       if (results) {
         res.json(results);
