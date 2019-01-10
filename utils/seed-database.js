@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const { MONGODB_URI } = require('../config');
 
 const Note = require('../models/note');
-const Folder = require('../models/folders')
+const Folder = require('../models/folder')
 
 const { notes, folders } = require('../db/data');
 
