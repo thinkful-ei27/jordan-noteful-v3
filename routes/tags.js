@@ -3,7 +3,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
-const Folder = require('../models/folder');
+const Tag = require('../models/tag');
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.get('/', (req, res, next) => {
 
-  Folder.find()
+  Tag.find()
     .sort({normalized:1})
     .then(results => {
       if (results) {
@@ -28,15 +28,15 @@ router.get('/', (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 
 router.get('/:id', (req, res, next) => {
-  const folderId = req.params.id;
+  const tagId = req.params.id;
 
-  if(!mongoose.Types.ObjectId.isValid(folderId)) {
+  if(!mongoose.Types.ObjectId.isValid(tagId)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  Folder.findById(folderId)
+  Tag.findById(tagId)
     .then(results => {
       if (results) {
         res.json(results)
@@ -55,15 +55,15 @@ router.get('/:id', (req, res, next) => {
 router.post('/', (req, res, next) => {
   const { name } = req.body;
 
-  const newFolder = { name: name };
+  const newTag = { name: name };
 
-  if(!newFolder.name) {
+  if(!newTag.name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  Folder.create(newFolder)
+  Tag.create(newTag)
     .then(results => {
       res.location(`${req.originalUrl}/${results.id}`)
         .status(201)
@@ -91,13 +91,13 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder.findByIdAndUpdate(updateId, {$set: updateObj}, {new: true})
+  Tag.findByIdAndUpdate(updateId, {$set: updateObj}, {new: true})
     .then(results => {
       res.json(results);
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('That folder already exists');
+        err = new Error('That tag already exists');
         err.status = 400;
       }
       next(err);
@@ -110,7 +110,7 @@ router.delete('/:id', (req, res, next) => {
   
   const deleteId = req.params.id;
 
-  Folder.findByIdAndDelete(deleteId)
+  Tag.findByIdAndDelete(deleteId)
     .then(res.sendStatus(204))
     .catch(err => {
       next(err);

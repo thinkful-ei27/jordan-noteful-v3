@@ -2,14 +2,14 @@
 
 const mongoose = require('mongoose');
 
-const folderSchema = new mongoose.Schema({
+const tagSchema = new mongoose.Schema({
   name: {type: String, required: true, unique: true},
   normalized: String
 });
 
-folderSchema.set('timestamps', true);
+tagSchema.set('timestamps', true);
 
-folderSchema.set('toJSON', {
+tagSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
     delete ret._id;
@@ -17,4 +17,4 @@ folderSchema.set('toJSON', {
   }
 });
 
-module.exports = mongoose.model('Folder', folderSchema);
+module.exports = mongoose.model('Tag', tagSchema);

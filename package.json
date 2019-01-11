@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node server.js",
     "test": "cross-env NODE_ENV=test mocha --file test/notes.test.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "cover": "nyc --reporter=text-summary --reporter=lcov npm test",
+    "seed": "node ./utils/seed-database.js"
   },
   "dependencies": {
     "express": "^4.16.3",
@@ -21,6 +23,7 @@
     "chai": "^4.1.2",
     "chai-http": "^4.2.0",
     "cross-env": "^5.2.0",
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0"
   }
 }

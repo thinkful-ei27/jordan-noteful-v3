@@ -160,6 +160,7 @@ describe('Notes API resource', function() {
           updateNote.id = note.id;
           updateNote.createdAt = note.createdAt;
           updateNote.updatedAt = note.updatedAt;
+          updateNote.folderId = note.folderId;
 
           return chai.request(app)
             .put(`/api/notes/${note.id}`)
@@ -179,6 +180,7 @@ describe('Notes API resource', function() {
           expect(note.id).to.equal(updateNote.id);
           expect(note.title).to.equal(updateNote.title);
           expect(note.content).to.equal(updateNote.content);
+          expect(note.folderId.toString()).to.equal(updateNote.folderId.toString());
           expect(new Date(note.createdAt)).to.eql(updateNote.createdAt);
           expect(new Date(note.updatedAt)).to.be.greaterThan(updateNote.updatedAt);
         });
