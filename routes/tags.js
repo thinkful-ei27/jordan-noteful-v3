@@ -111,6 +111,7 @@ router.delete('/:id', (req, res, next) => {
   const deleteId = req.params.id;
 
   Tag.findByIdAndDelete(deleteId)
+    .then()
     .then(res.sendStatus(204))
     .catch(err => {
       next(err);
