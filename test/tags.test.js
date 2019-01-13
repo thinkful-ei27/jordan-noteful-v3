@@ -15,15 +15,18 @@ chai.use(chaiHttp);
 
 describe('Tags API resource', function() {
 
-  // SET UP AND TEAR DB DOWN BEFORE EVERY TEST
-  // Connect to the database before all tests
+  // ====*****====  SET UP AND TEAR DB DOWN BEFORE EVERY TEST ====*****====  \\
+  // ====*****====   Connect to the database before all tests  ====*****====  \\
   before(function() {
     return mongoose.connect(TEST_MONGODB_URI)
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
   beforeEach(function () {
-    return Tag.insertMany(tags);
+    return Promise.all([
+      Tag.insertMany(tags),
+      Tag.createIndexes()
+    ]);
   });
 
   afterEach(function () {
@@ -33,9 +36,9 @@ describe('Tags API resource', function() {
   after(function () {
     return mongoose.disconnect();
   });
-  // END OF BEFORE AND AFTER TEST SETUPS
 
-  // Test for GET all Notes
+
+  // ====*****====  Test for GET all Tags ====*****====  \\
   describe('GET /tags', function () {
     it('should return all existing tags', function() {
 
@@ -78,7 +81,7 @@ describe('Tags API resource', function() {
   });
 
     
-
+  // ====*****====  Test for GET Tag by Id ====*****====  \\
   describe('GET tag by Id', function () {
     it('should return one tag that matches the Id in the Url', function() {
 
@@ -110,11 +113,13 @@ describe('Tags API resource', function() {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('The `id` is not valid');
+          expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
   });
 
+
+  // ====*****====  Test for POST a Tag ====*****====  \\
   describe('POST tag', function() {
     it('should create a new tag', function() {
 
@@ -143,6 +148,7 @@ describe('Tags API resource', function() {
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
         });
     });
+
     it('should return 400 error and message when no name is provided', function() {
       const badItem = {name: ''};
       return chai.request(app)
@@ -152,9 +158,10 @@ describe('Tags API resource', function() {
           expect(res).to.be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('Missing `name` in request body');
+          expect(res.body.message).to.equal('Missing `name` in request body');
         });
     });
+
     it('should return 400 error on invalid Id', function() {
       let badId = '99';
       return chai.request(app)
@@ -163,11 +170,31 @@ describe('Tags API resource', function() {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('The `id` is not valid');
+          expect(res.body.message).to.equal('The `id` is not valid');
+        });
+    });
+
+    it('should return 400 error and message if tag already exists', function() {
+      
+      return Tag.findOne()
+        .then(res => {
+          const duplicateTag = {'name': res.name};
+          console.log(duplicateTag);
+          return chai.request(app)
+            .post('/api/tags/')
+            .send(duplicateTag);
+        })
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('That tag already exists');
         });
     });
   });
 
+
+  // ====*****====  Test for PUT Tag by Id ====*****====  \\
   describe('PUT tag', function() {
     it('should update tag with new data', function() {
 
@@ -208,11 +235,12 @@ describe('Tags API resource', function() {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('The `id` is not valid');
+          expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
   });
 
+  // ====*****====  Test for DELETE Tag ====*****====  \\
   describe('Delete tag', function() {
     it('should delete tag by id', function() {
 
@@ -241,9 +269,8 @@ describe('Tags API resource', function() {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('The `id` is not valid');
+          expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
   });
-
 });
