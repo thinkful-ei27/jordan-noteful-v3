@@ -23,7 +23,10 @@ describe('Folders API resource', function() {
   });
 
   beforeEach(function () {
-    return Folder.insertMany(folders);
+    return Promise.all([
+      Folder.insertMany(folders),
+      Folder.createIndexes()
+    ]);
   });
 
   afterEach(function () {
@@ -77,6 +80,8 @@ describe('Folders API resource', function() {
     });
   });
 
+
+  // ====*****====  Test for GET Folder by Id ====*****====  \\
   describe('GET folder by Id', function () {
     it('should return one folder that matches the Id in the Url', function() {
 
@@ -116,6 +121,8 @@ describe('Folders API resource', function() {
     });
   });
 
+
+  // ====*****====  Test for POST a Tag ====*****====  \\
   describe('POST folder', function() {
     it('should create a new folder', function() {
 
@@ -145,6 +152,19 @@ describe('Folders API resource', function() {
         });
     });
 
+    it('should return 400 error and message when no name is provided', function() {
+      const badItem = {name: ''};
+      return chai.request(app)
+        .post('/api/folders')
+        .send(badItem)
+        .then(function (res) {
+          expect(res).to.be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('Missing `name` in request body');
+        });
+    });
+
     it('should return 400 error on invalid Id', function() {
       let badId = '99';
       return chai.request(app)
@@ -156,8 +176,28 @@ describe('Folders API resource', function() {
           expect(res.body.message).to.deep.include('The `id` is not valid');
         });
     });
+
+    it('should return 400 error and message if folder already exists', function() {
+      
+      return Folder.findOne()
+        .then(res => {
+          const duplicateFolder = {'name': res.name};
+          console.log(duplicateFolder);
+          return chai.request(app)
+            .post('/api/folders/')
+            .send(duplicateFolder);
+        })
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('That folder already exists');
+        });
+    });
   });
 
+
+  // ====*****====  Test for PUT Tag by Id ====*****====  \\
   describe('PUT folder', function() {
     it('should update folder with new data', function() {
 
@@ -190,6 +230,19 @@ describe('Folders API resource', function() {
         });
     });
 
+    it('should return 400 error and message when no name is provided', function() {
+      const badItem = {name: ''};
+      return chai.request(app)
+        .post('/api/folders')
+        .send(badItem)
+        .then(function (res) {
+          expect(res).to.be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('Missing `name` in request body');
+        });
+    });
+
     it('should return 400 error on invalid Id', function() {
       let badId = '99';
       return chai.request(app)
@@ -198,11 +251,30 @@ describe('Folders API resource', function() {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
-          expect(res.body.message).to.deep.include('The `id` is not valid');
+          expect(res.body.message).to.equal('The `id` is not valid');
+        });
+    });
+
+    it('should return 400 error and message if folder already exists', function() {
+      
+      return Folder.findOne()
+        .then(res => {
+          const duplicateFolder = {'name': res.name};
+          return chai.request(app)
+            .post('/api/folders/')
+            .send(duplicateFolder);
+        })
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('That folder already exists');
         });
     });
   });
 
+
+  // ====*****====  Test for DELETE Tag ====*****====  \\
   describe('Delete folder', function() {
     it('should delete folder by id', function() {
 

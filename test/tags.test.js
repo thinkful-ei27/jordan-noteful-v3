@@ -179,7 +179,6 @@ describe('Tags API resource', function() {
       return Tag.findOne()
         .then(res => {
           const duplicateTag = {'name': res.name};
-          console.log(duplicateTag);
           return chai.request(app)
             .post('/api/tags/')
             .send(duplicateTag);
@@ -226,6 +225,44 @@ describe('Tags API resource', function() {
           expect(new Date(res.body.updatedAt)).to.greaterThan(updateTag.updatedAt);
         });
     });
+    
+    it('should return error if no name given', function() {
+      const badItem = {name: ''};
+      return Tag.findOne()
+        .then(function(update) {
+
+          return chai.request(app)
+            .put(`/api/tags/${update.id}`)
+            .send(badItem);
+        })
+        .then(function (res) {
+          expect(res).to.be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('Missing `name` in request body');
+        });
+    });
+
+    it('should return 400 error and message if tag already exists', function() {
+      
+      let note1, note2;
+      return Tag.find().sort({normalized:1})
+        .then(res => {
+          note1 = res[0];
+          note2 = res[1];
+          note2.name = note1.name;
+
+          return chai.request(app)
+            .put(`/api/tags/${note2.id}`)
+            .send(note2);
+        })
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.equal('That tag already exists');
+        });
+    });
 
     it('should return 400 error on invalid Id', function() {
       let badId = '99';
@@ -238,6 +275,8 @@ describe('Tags API resource', function() {
           expect(res.body.message).to.equal('The `id` is not valid');
         });
     });
+
+    
   });
 
   // ====*****====  Test for DELETE Tag ====*****====  \\
