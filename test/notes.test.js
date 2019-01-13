@@ -8,7 +8,10 @@ const app = require('../server');
 
 const { TEST_MONGODB_URI } = require('../config');
 const Note = require('../models/note');
-const { notes } = require('../db/data');
+const Folder = require('../models/folder');
+const Tag = require('../models/tag');
+
+const { notes, folders, tags } = require('../db/data');
 
 const expect = chai.expect;
 chai.use(chaiHttp);
@@ -24,7 +27,15 @@ describe('Notes API resource', function() {
 
   // Seed data runs before each test
   beforeEach(function () {
-    return Note.insertMany(notes);
+    return Promise.all([
+      Note.insertMany(notes),
+
+      Folder.insertMany(folders),
+      Folder.createIndexes(),
+
+      Tag.insertMany(tags),
+      Tag.createIndexes()
+    ]);
   });
 
   // Drop database runs after each test
@@ -48,6 +59,7 @@ describe('Notes API resource', function() {
         .then(function(_res) {
           res = _res;
           expect(res).to.have.status(200);
+          expect(res).to.be.json;
           expect(res.body).to.have.lengthOf.at.least(1);
           return Note.count();
         })
@@ -58,29 +70,29 @@ describe('Notes API resource', function() {
 
     it('should return notes with correct fields', function() {
       
-      let resNote;
-      return chai.request(app)
-        .get('/api/notes')
-        .then(function(res) {
+      return Promise.all([
+        chai.request(app).get('/api/notes'),
+        Note.find().sort({ updatedAt: 'desc' }),
+      ])
+        .then(([res, data]) => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.an('array');
-          expect(res.body).to.have.lengthOf.at.least(1);
+          expect(res.body).to.have.lengthOf(data.length);
 
-          res.body.forEach(function(note) {
+          res.body.forEach(function(note, i) {
             expect(note).to.be.an('object');
-            expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
+            expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
+            expect(data[i].id).to.equal(note.id);
+            expect(data[i].title).to.equal(note.title);
+            expect(data[i].content).to.equal(note.content);
+            expect(data[i].folderId.toString()).to.equal(note.folderId.toString());
+            expect(data[i].createdAt).to.deep.eql(new Date(note.createdAt));
+            expect(data[i].updatedAt).to.deep.eql(new Date(note.updatedAt));
+            data[i].tags.forEach((tag, j) => {
+              expect(tag.toString()).to.eql(note.tags[j].id);
+            });
           });
-          resNote = res.body[0];
-          console.log((resNote));
-          return Note.findById(resNote.id);
-        })
-        .then(function(note) {
-          console.log(note);
-          expect(resNote.id).to.equal(note.id);
-          expect(resNote.title).to.equal(note.title);
-          expect(resNote.content).to.equal(note.content);
-          expect(resNote.folderId).to.equal(note.folderId.toString());
         });
     });
   });

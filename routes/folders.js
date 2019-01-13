@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const Folder = require('../models/folder');
+const Note = require('../models/note');
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const router = express.Router();
 router.get('/', (req, res, next) => {
 
   Folder.find()
-    .sort({normalized:1})
+    .sort({ normalized: 1 })
     .then(results => {
       if (results) {
         res.json(results);
@@ -30,7 +31,7 @@ router.get('/', (req, res, next) => {
 router.get('/:id', (req, res, next) => {
   const folderId = req.params.id;
 
-  if(!mongoose.Types.ObjectId.isValid(folderId)) {
+  if (!mongoose.Types.ObjectId.isValid(folderId)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
@@ -57,7 +58,7 @@ router.post('/', (req, res, next) => {
 
   const newFolder = { name: name };
 
-  if(!newFolder.name) {
+  if (!newFolder.name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
@@ -85,13 +86,19 @@ router.put('/:id', (req, res, next) => {
   const updateId = req.params.id;
   const updateObj = { name: req.body.name };
 
-  if(!updateObj.name) {
+  if (!mongoose.Types.ObjectId.isValid(updateId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  if (!updateObj.name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  Folder.findByIdAndUpdate(updateId, {$set: updateObj}, {new: true})
+  Folder.findByIdAndUpdate(updateId, { $set: updateObj }, { new: true })
     .then(results => {
       res.json(results);
     })
@@ -107,10 +114,22 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 
 router.delete('/:id', (req, res, next) => {
-  
+
   const deleteId = req.params.id;
 
-  Folder.findByIdAndDelete(deleteId)
+  if (!mongoose.Types.ObjectId.isValid(deleteId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  Promise.all([
+    Folder.findByIdAndDelete(deleteId),
+    Note.updateMany(
+      { folderId: deleteId },
+      { $unset: { folderId: ''} }
+    )
+  ])
     .then(res.sendStatus(204))
     .catch(err => {
       next(err);

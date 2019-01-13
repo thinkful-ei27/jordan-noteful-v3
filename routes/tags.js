@@ -85,6 +85,12 @@ router.put('/:id', (req, res, next) => {
   const updateId = req.params.id;
   const updateObj = { name: req.body.name };
 
+  if(!mongoose.Types.ObjectId.isValid(updateId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
   if(!updateObj.name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
@@ -109,6 +115,12 @@ router.put('/:id', (req, res, next) => {
 router.delete('/:id', (req, res, next) => {
   
   const deleteId = req.params.id;
+
+  if(!mongoose.Types.ObjectId.isValid(deleteId)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
 
   Tag.findByIdAndDelete(deleteId)
     .then()
