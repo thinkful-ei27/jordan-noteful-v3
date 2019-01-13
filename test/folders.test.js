@@ -102,6 +102,18 @@ describe('Folders API resource', function() {
             });
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/folders/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
 
   describe('POST folder', function() {
@@ -130,6 +142,18 @@ describe('Folders API resource', function() {
           expect(res.body.name).to.equal(data.name);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        });
+    });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/folders/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
         });
     });
   });
@@ -165,6 +189,18 @@ describe('Folders API resource', function() {
           expect(new Date(res.body.updatedAt)).to.greaterThan(updateFolder.updatedAt);
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/folders/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
 
   describe('Delete folder', function() {
@@ -187,6 +223,18 @@ describe('Folders API resource', function() {
         })
         .then(folder => {
           expect(folder).to.be.null;
+        });
+    });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/folders/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
         });
     });
   });

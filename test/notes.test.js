@@ -124,6 +124,19 @@ describe('Notes API resource', function() {
             });
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/notes/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
+
   });
 
   describe('POST note', function() {
@@ -154,6 +167,18 @@ describe('Notes API resource', function() {
           expect(res.body.content).to.equal(data.content);
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        });
+    });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/notes/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
         });
     });
   });
@@ -197,6 +222,18 @@ describe('Notes API resource', function() {
           expect(new Date(note.updatedAt)).to.be.greaterThan(updateNote.updatedAt);
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/notes/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
 
   describe('Delete note', function() {
@@ -221,6 +258,19 @@ describe('Notes API resource', function() {
           expect(note).to.be.null;
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/notes/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
+  
 
 });

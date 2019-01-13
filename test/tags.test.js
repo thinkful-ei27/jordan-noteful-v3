@@ -102,8 +102,17 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error on invalid Id')
-    let badId = '99'
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/tags/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
 
   describe('POST tag', function() {
@@ -137,14 +146,25 @@ describe('Tags API resource', function() {
     it('should return 400 error and message when no name is provided', function() {
       const badItem = {name: ''};
       return chai.request(app)
-      .post('/api/tags')
-      .send(badItem)
-      .then(function (res) {
-        expect(res).to.exist;
-        expect(res).to.have.status(400);
-        expect(res.body).to.be.an('object');
-        expect(res.body.message).to.deep.include('Missing `name` in request body')
-      });
+        .post('/api/tags')
+        .send(badItem)
+        .then(function (res) {
+          expect(res).to.be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('Missing `name` in request body');
+        });
+    });
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/tags/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
     });
   });
 
@@ -179,6 +199,18 @@ describe('Tags API resource', function() {
           expect(new Date(res.body.updatedAt)).to.greaterThan(updateTag.updatedAt);
         });
     });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/tags/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
+        });
+    });
   });
 
   describe('Delete tag', function() {
@@ -189,18 +221,27 @@ describe('Tags API resource', function() {
         .findOne()
         .then(function(tag) {
           deleteTagId = tag.id;
-
           return chai.request(app)
             .delete(`/api/tags/${deleteTagId}`);
         })
         .then(function(res) {
-
           expect(res).to.have.status(204);
-
           return Tag.findById(deleteTagId);
         })
         .then(tag => {
           expect(tag).to.be.null;
+        });
+    });
+
+    it('should return 400 error on invalid Id', function() {
+      let badId = '99';
+      return chai.request(app)
+        .get(`/api/tags/${badId}`)
+        .then(function(res) {
+          expect(res).be.json;
+          expect(res).to.have.status(400);
+          expect(res.body).to.be.an('object');
+          expect(res.body.message).to.deep.include('The `id` is not valid');
         });
     });
   });
