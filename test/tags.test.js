@@ -1,23 +1,25 @@
 'use strict';
 
 const chai = require('chai');
-const chaiHttp =  require('chai-http');
+const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
 
 const app = require('../server');
 
 const { TEST_MONGODB_URI } = require('../config');
+
 const Tag = require('../models/tag');
-const { tags } = require('../db/data');
+const Note = require('../models/note');
+const { tags, notes } = require('../db/data');
 
 const expect = chai.expect;
 chai.use(chaiHttp);
 
-describe('Tags API resource', function() {
+describe('Tags API resource', function () {
 
   // ====*****====  SET UP AND TEAR DB DOWN BEFORE EVERY TEST ====*****====  \\
   // ====*****====   Connect to the database before all tests  ====*****====  \\
-  before(function() {
+  before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
       .then(() => mongoose.connection.db.dropDatabase());
   });
@@ -25,7 +27,10 @@ describe('Tags API resource', function() {
   beforeEach(function () {
     return Promise.all([
       Tag.insertMany(tags),
-      Tag.createIndexes()
+      Tag.createIndexes(),
+
+      Note.insertMany(notes),
+      Note.createIndexes()
     ]);
   });
 
@@ -40,50 +45,50 @@ describe('Tags API resource', function() {
 
   // ====*****====  Test for GET all Tags ====*****====  \\
   describe('GET /tags', function () {
-    it('should return all existing tags', function() {
+    it('should return all existing tags', function () {
 
       let res;
       return chai.request(app)
         .get('/api/tags')
-        .then(function(_res) {
+        .then(function (_res) {
           res = _res;
           expect(res).to.have.status(200);
           expect(res.body).to.have.lengthOf.at.least(1);
           return Tag.count();
         })
-        .then(function(count) {
+        .then(function (count) {
           expect(res.body).to.have.lengthOf(count);
         });
     });
-    it('should return tags with correct files', function() {
+    it('should return tags with correct files', function () {
 
       let resTag;
       return chai.request(app)
         .get('/api/tags')
-        .then(function(res) {
+        .then(function (res) {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.an('array');
           expect(res.body).to.have.lengthOf.at.least(1);
 
-          res.body.forEach(function(tag) {
+          res.body.forEach(function (tag) {
             expect(tag).to.be.an('object');
             expect(tag).to.include.keys('id', 'name', 'createdAt', 'updatedAt');
           });
           resTag = res.body[0];
           return Tag.findById(resTag.id);
         })
-        .then(function(tag) {
+        .then(function (tag) {
           expect(resTag.id).to.equal(tag.id);
           expect(resTag.name).to.equal(tag.name);
         });
     });
   });
 
-    
+
   // ====*****====  Test for GET Tag by Id ====*****====  \\
   describe('GET tag by Id', function () {
-    it('should return one tag that matches the Id in the Url', function() {
+    it('should return one tag that matches the Id in the Url', function () {
 
       let data;
       return Tag.findOne()
@@ -91,7 +96,7 @@ describe('Tags API resource', function() {
           data = _data;
           return chai.request(app)
             .get(`/api/tags/${data.id}`)
-            .then(function(res) {
+            .then(function (res) {
               expect(res).to.have.status(200);
               expect(res).to.be.json;
               expect(res.body).to.be.an('object');
@@ -105,11 +110,11 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error on invalid Id', function() {
+    it('should return 400 error on invalid Id', function () {
       let badId = '99';
       return chai.request(app)
         .get(`/api/tags/${badId}`)
-        .then(function(res) {
+        .then(function (res) {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
@@ -120,8 +125,8 @@ describe('Tags API resource', function() {
 
 
   // ====*****====  Test for POST a Tag ====*****====  \\
-  describe('POST tag', function() {
-    it('should create a new tag', function() {
+  describe('POST tag', function () {
+    it('should create a new tag', function () {
 
       let newTag = {
         'name': 'School',
@@ -131,7 +136,7 @@ describe('Tags API resource', function() {
       return chai.request(app)
         .post('/api/tags')
         .send(newTag)
-        .then(function(_res) {
+        .then(function (_res) {
           res = _res;
           expect(res).to.have.status(201);
           expect(res).to.be.json;
@@ -149,8 +154,8 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error and message when no name is provided', function() {
-      const badItem = {name: ''};
+    it('should return 400 error and message when no name is provided', function () {
+      const badItem = { name: '' };
       return chai.request(app)
         .post('/api/tags')
         .send(badItem)
@@ -162,28 +167,16 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error on invalid Id', function() {
-      let badId = '99';
-      return chai.request(app)
-        .get(`/api/tags/${badId}`)
-        .then(function(res) {
-          expect(res).be.json;
-          expect(res).to.have.status(400);
-          expect(res.body).to.be.an('object');
-          expect(res.body.message).to.equal('The `id` is not valid');
-        });
-    });
+    it('should return 400 error and message if tag already exists', function () {
 
-    it('should return 400 error and message if tag already exists', function() {
-      
       return Tag.findOne()
         .then(res => {
-          const duplicateTag = {'name': res.name};
+          const duplicateTag = { 'name': res.name };
           return chai.request(app)
             .post('/api/tags/')
             .send(duplicateTag);
         })
-        .then(function(res) {
+        .then(function (res) {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
@@ -194,26 +187,26 @@ describe('Tags API resource', function() {
 
 
   // ====*****====  Test for PUT Tag by Id ====*****====  \\
-  describe('PUT tag', function() {
-    it('should update tag with new data', function() {
+  describe('PUT tag', function () {
+    it('should update tag with new data', function () {
 
       const updateTag = {
         name: 'Felines',
 
       };
       let res;
-      
+
       return Tag.findOne()
-        .then(function(tag) {
+        .then(function (tag) {
           updateTag.id = tag.id;
           updateTag.createdAt = tag.createdAt;
           updateTag.updatedAt = tag.updatedAt;
-        
+
           return chai.request(app)
             .put(`/api/tags/${updateTag.id}`)
             .send(updateTag);
         })
-        .then(function(_res) {
+        .then(function (_res) {
           res = _res;
           expect(res).to.have.status(200);
           expect(res).to.be.json;
@@ -225,11 +218,11 @@ describe('Tags API resource', function() {
           expect(new Date(res.body.updatedAt)).to.greaterThan(updateTag.updatedAt);
         });
     });
-    
-    it('should return error if no name given', function() {
-      const badItem = {name: ''};
+
+    it('should return error if no name given', function () {
+      const badItem = { name: '' };
       return Tag.findOne()
-        .then(function(update) {
+        .then(function (update) {
 
           return chai.request(app)
             .put(`/api/tags/${update.id}`)
@@ -243,10 +236,10 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error and message if tag already exists', function() {
-      
+    it('should return 400 error and message if tag already exists', function () {
+
       let note1, note2;
-      return Tag.find().sort({normalized:1})
+      return Tag.find().sort({ normalized: 1 })
         .then(res => {
           note1 = res[0];
           note2 = res[1];
@@ -256,7 +249,7 @@ describe('Tags API resource', function() {
             .put(`/api/tags/${note2.id}`)
             .send(note2);
         })
-        .then(function(res) {
+        .then(function (res) {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
@@ -264,11 +257,12 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error on invalid Id', function() {
-      let badId = '99';
+    it('should return 400 error on invalid Id', function () {
+      let badItem = { id: '99', name: 'kaka' };
       return chai.request(app)
-        .get(`/api/tags/${badId}`)
-        .then(function(res) {
+        .put(`/api/tags/${badItem.id}`)
+        .send(badItem)
+        .then(function (res) {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');
@@ -276,22 +270,22 @@ describe('Tags API resource', function() {
         });
     });
 
-    
+
   });
 
   // ====*****====  Test for DELETE Tag ====*****====  \\
-  describe('Delete tag', function() {
-    it('should delete tag by id', function() {
+  describe('Delete tag', function () {
+    it('should delete tag by id', function () {
 
       let deleteTagId;
       return Tag
         .findOne()
-        .then(function(tag) {
+        .then(function (tag) {
           deleteTagId = tag.id;
           return chai.request(app)
             .delete(`/api/tags/${deleteTagId}`);
         })
-        .then(function(res) {
+        .then(function (res) {
           expect(res).to.have.status(204);
           return Tag.findById(deleteTagId);
         })
@@ -300,11 +294,50 @@ describe('Tags API resource', function() {
         });
     });
 
-    it('should return 400 error on invalid Id', function() {
+    it('should remove tag from all notes', function () {
+
+      let deleteTagId;
+      return Promise.all([
+        Tag.findOne().then(function (tag) {
+          deleteTagId = tag.id;
+          return chai.request(app).delete(`/api/tags/${deleteTagId}`);
+        }),
+        Note.createIndexes(),
+        chai.request(app).get('/api/notes'),
+        Note.find().sort({ updatedAt: 'desc' })
+      ])
+        .then(([res1, res2, res3, data]) => {
+          expect(res3).to.have.status(200);
+          expect(res3).to.be.json;
+          expect(res3.body).to.be.an('array');
+          expect(res3.body).to.have.lengthOf(data.length);
+
+          res3.body.forEach(function (note, i) {
+            expect(note).to.be.an('object');
+            expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
+            expect(data[i].id).to.equal(note.id);
+            expect(data[i].title).to.equal(note.title);
+            expect(data[i].content).to.equal(note.content);
+            expect(data[i].folderId.toString()).to.equal(note.folderId.toString());
+            expect(data[i].createdAt).to.deep.eql(new Date(note.createdAt));
+            expect(data[i].updatedAt).to.deep.eql(new Date(note.updatedAt));
+            if(note.tags != []) {
+              data[i].tags.forEach((tag, j) => {
+                expect(tag.toString()).to.eql(note.tags[j].id);
+                expect(tag).to.not.equal(deleteTagId);
+              });
+            } else {
+              expect(note.tags).to.equal([]);
+            }
+          });
+        });
+    });
+
+    it('should return 400 error on invalid Id', function () {
       let badId = '99';
       return chai.request(app)
         .get(`/api/tags/${badId}`)
-        .then(function(res) {
+        .then(function (res) {
           expect(res).be.json;
           expect(res).to.have.status(400);
           expect(res.body).to.be.an('object');

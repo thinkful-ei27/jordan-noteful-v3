@@ -1,7 +1,7 @@
 'use strict';
 
 const chai = require('chai');
-const chaiHttp =  require('chai-http');
+const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
 
 const app = require('../server');
@@ -16,12 +16,12 @@ const { notes, folders, tags } = require('../db/data');
 const expect = chai.expect;
 chai.use(chaiHttp);
 
-describe('Notes API resource', function() {
+describe('Notes API resource', function () {
 
   // ====*****====  SET UP AND TEAR DB DOWN BEFORE EVERY TEST ====*****====  \\
   // ====*****====   Connect to the database before all tests  ====*****====  \\
-  before(function() {
-    before(function() {
+  before(function () {
+    before(function () {
       return mongoose.connect(TEST_MONGODB_URI)
         .then(() => mongoose.connection.db.dropDatabase());
     });
@@ -30,6 +30,7 @@ describe('Notes API resource', function() {
     beforeEach(function () {
       return Promise.all([
         Note.insertMany(notes),
+        Note.createIndexes(),
 
         Folder.insertMany(folders),
         Folder.createIndexes(),
@@ -52,25 +53,25 @@ describe('Notes API resource', function() {
 
     // ====*****====  Test for GET all Notes ====*****====  \\
     describe('GET /notes', function () {
-      it('should return all existing notes', function() {
+      it('should return all existing notes', function () {
 
         let res;
         return chai.request(app)
           .get('/api/notes')
-          .then(function(_res) {
+          .then(function (_res) {
             res = _res;
             expect(res).to.have.status(200);
             expect(res).to.be.json;
             expect(res.body).to.have.lengthOf.at.least(1);
             return Note.count();
           })
-          .then(function(count) {
+          .then(function (count) {
             expect(res.body).to.have.lengthOf(count);
           });
       });
 
-      it('should return notes with correct fields', function() {
-      
+      it('should return notes with correct fields', function () {
+
         return Promise.all([
           chai.request(app).get('/api/notes'),
           Note.find().sort({ updatedAt: 'desc' }),
@@ -81,7 +82,7 @@ describe('Notes API resource', function() {
             expect(res.body).to.be.an('array');
             expect(res.body).to.have.lengthOf(data.length);
 
-            res.body.forEach(function(note, i) {
+            res.body.forEach(function (note, i) {
               expect(note).to.be.an('object');
               expect(note).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
               expect(data[i].id).to.equal(note.id);
@@ -101,7 +102,7 @@ describe('Notes API resource', function() {
 
     // ====*****====  Test for GET Note by Id ====*****====  \\
     describe('GET note by Id', function () {
-      it('should return one note that matches the Id in the Url', function() {
+      it('should return one note that matches the Id in the Url', function () {
 
         let data;
 
@@ -110,10 +111,10 @@ describe('Notes API resource', function() {
             data = _data;
             return chai.request(app)
               .get(`/api/notes/${data.id}`)
-              .then(function(res) {
+              .then(function (res) {
                 expect(res).to.have.status(200);
                 expect(res).to.be.json;
-          
+
                 expect(res.body).to.be.an('object');
                 expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
 
@@ -128,11 +129,11 @@ describe('Notes API resource', function() {
           });
       });
 
-      it('should return 400 error on invalid Id', function() {
+      it('should return 400 error on invalid Id', function () {
         let badId = '99';
         return chai.request(app)
           .get(`/api/notes/${badId}`)
-          .then(function(res) {
+          .then(function (res) {
             expect(res).be.json;
             expect(res).to.have.status(400);
             expect(res.body).to.be.an('object');
@@ -144,8 +145,8 @@ describe('Notes API resource', function() {
 
 
     // ====*****====  Test for POST a Note ====*****====  \\
-    describe('POST note', function() {
-      it('should create a new note', function() {
+    describe('POST note', function () {
+      it('should create a new note', function () {
 
         let newNote = {
           'title': 'The Best Cats are Big Cats',
@@ -156,7 +157,7 @@ describe('Notes API resource', function() {
         return chai.request(app)
           .post('/api/notes')
           .send(newNote)
-          .then(function(_res) {
+          .then(function (_res) {
             res = _res;
             expect(res).to.have.status(201);
             expect(res).to.be.json;
@@ -175,23 +176,42 @@ describe('Notes API resource', function() {
           });
       });
 
-      it('should return 400 error on invalid Id', function() {
-        let badId = '99';
+      it('should return 400 error and message when no name is provided', function () {
+        const badItem = { name: '' };
         return chai.request(app)
-          .get(`/api/notes/${badId}`)
-          .then(function(res) {
+          .post('/api/notes')
+          .send(badItem)
+          .then(function (res) {
+            expect(res).to.be.json;
+            expect(res).to.have.status(400);
+            expect(res.body).to.be.an('object');
+            expect(res.body.message).to.equal('Missing `name` in request body');
+          });
+      });
+
+      it('should return 400 error and message if note already exists', function () {
+
+        return Note.findOne()
+          .then(res => {
+            const duplicateNote = { 'name': res.name };
+            return chai.request(app)
+              .post('/api/notes/')
+              .send(duplicateNote);
+          })
+          .then(function (res) {
             expect(res).be.json;
             expect(res).to.have.status(400);
             expect(res.body).to.be.an('object');
-            expect(res.body.message).to.deep.include('The `id` is not valid');
+            expect(res.body.message).to.equal('That note already exists');
           });
       });
+
     });
 
 
     // ====*****====  Test for PUT Note by Id ====*****====  \\
-    describe('PUT note', function() {
-      it('should update note with new data', function() {
+    describe('PUT note', function () {
+      it('should update note with new data', function () {
 
         const updateNote = {
           title: 'What is the hottest club this holiday season?',
@@ -200,7 +220,7 @@ describe('Notes API resource', function() {
 
         return Note
           .findOne()
-          .then(function(note) {
+          .then(function (note) {
             updateNote.id = note.id;
             updateNote.createdAt = note.createdAt;
             updateNote.updatedAt = note.updatedAt;
@@ -210,11 +230,10 @@ describe('Notes API resource', function() {
               .put(`/api/notes/${note.id}`)
               .send(updateNote);
           })
-          .then(function(res) {
+          .then(function (res) {
 
             expect(res).to.have.status(200);
             expect(res).to.be.json;
-
             expect(res.body).to.be.an('object');
             expect(res.body).to.include.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId');
 
@@ -230,11 +249,46 @@ describe('Notes API resource', function() {
           });
       });
 
-      it('should return 400 error on invalid Id', function() {
-        let badId = '99';
+      it('should return 400 error and message when no name is provided', function () {
+        const badItem = { name: '' };
         return chai.request(app)
-          .get(`/api/notes/${badId}`)
-          .then(function(res) {
+          .post('/api/notes')
+          .send(badItem)
+          .then(function (res) {
+            expect(res).to.be.json;
+            expect(res).to.have.status(400);
+            expect(res.body).to.be.an('object');
+            expect(res.body.message).to.equal('Missing `name` in request body');
+          });
+      });
+
+      it('should return 400 error and message if tag already exists', function () {
+
+        let note1, note2;
+        return Tag.find().sort({ normalized: 1 })
+          .then(res => {
+            note1 = res[0];
+            note2 = res[1];
+            note2.name = note1.name;
+  
+            return chai.request(app)
+              .put(`/api/notes/${note2.id}`)
+              .send(note2);
+          })
+          .then(function (res) {
+            expect(res).be.json;
+            expect(res).to.have.status(400);
+            expect(res.body).to.be.an('object');
+            expect(res.body.message).to.equal('That note already exists');
+          });
+      });
+
+      it('should return 400 error on invalid Id', function () {
+        let badNote = {id: '99', name: 'bingo bongo'};
+        return chai.request(app)
+          .put(`/api/notes/${badNote.id}`)
+          .send(badNote)
+          .then(function (res) {
             expect(res).be.json;
             expect(res).to.have.status(400);
             expect(res.body).to.be.an('object');
@@ -245,19 +299,19 @@ describe('Notes API resource', function() {
 
 
     // ====*****====  Test for DELETE Note ====*****====  \\
-    describe('Delete note', function() {
-      it('should delete note by id', function() {
+    describe('Delete note', function () {
+      it('should delete note by id', function () {
 
         let deleteNoteId;
         return Note
           .findOne()
-          .then(function(note) {
+          .then(function (note) {
             deleteNoteId = note.id;
 
             return chai.request(app)
               .delete(`/api/notes/${deleteNoteId}`);
           })
-          .then(function(res) {
+          .then(function (res) {
 
             expect(res).to.have.status(204);
 
@@ -268,11 +322,11 @@ describe('Notes API resource', function() {
           });
       });
 
-      it('should return 400 error on invalid Id', function() {
+      it('should return 400 error on invalid Id', function () {
         let badId = '99';
         return chai.request(app)
           .get(`/api/notes/${badId}`)
-          .then(function(res) {
+          .then(function (res) {
             expect(res).be.json;
             expect(res).to.have.status(400);
             expect(res.body).to.be.an('object');
